@@ -160,7 +160,7 @@ fun String.isValidXsdDateLiteral(): Boolean {
  */
 fun String.isValidgYearMonthLiteral(earliest: LocalDate? = null, latest: LocalDate? = null): Boolean{
     val re = Regex("""\d{4}-\d{2}""")
-    val m = re.matchEntire(this) ?: return false
+    re.matchEntire(this) ?: return false
 
     val month = takeLast(2).toInt()
     if(month !in 1..12) return false
@@ -194,6 +194,51 @@ fun String.isValidgYearLiteral(earliest: LocalDate? = null, latest: LocalDate? =
     val year = this.toInt()
     earliest?.let{ if (year < it.year) return false }
     latest?.let{ if (year > it.year) return false }
+
+    return true
+}
+
+
+/**
+ * Validates an XML Schema `xsd:duration` literal per §3.2.6.
+ *
+ * Checks:
+ *  - Starts with optional '-' then 'P'
+ *  - Has at least one component among Y M D H M S (one designator required)
+ *  - 'T' present iff any time components (H/M/S) appear
+ *  - Each numeric part is unsigned integer or (for seconds) unsigned decimal
+ *  - Patterns like 'P-3D' or 'P1Y2MT' are rejected (only leading sign allowed)
+ *  - Allows reduced precision (omitting 0-components)
+ */
+fun String.isValidXsdDurationLiteral(): Boolean {
+    val s = this
+    // Regex: optional leading sign, then P, then optional date part, optional T + time part.
+    // At least one designator (Y M D H M S) required.
+    @Suppress("RegExpUnnecessaryNonCapturingGroup") val re = Regex(
+        """^(-)?P(?!$)(?:(\d+Y)?(\d+M)?(\d+D)?)(T(?=\d)(?:(\d+H)?(\d+M)?(\d+(?:\.\d+)?S)?))?$"""
+    )
+
+    val m = re.matchEntire(s) ?: return false
+
+    // Can't have 'P' with no fields (handled by (?!$), but keep for clarity)
+    if (m.groups.drop(1).all { it?.value == null }) return false
+
+    // Rule: 'T' must be absent iff all time fields are absent
+    val tIdx = s.indexOf('T')
+    val hasT = tIdx != -1
+    val hasTimeField = if (hasT)
+        (s.indexOf('H', tIdx + 1) != -1) ||
+                (s.indexOf('M', tIdx + 1) != -1) ||
+                (s.indexOf('S', tIdx + 1) != -1)
+    else false
+    if (hasT != hasTimeField) return false
+
+    // Rule: no embedded minus signs allowed
+    if (s.drop(1).contains('-')) return false
+
+    // Check decimal seconds syntax: digits + optional .digits (no trailing dot)
+    val secPart = m.groupValues.getOrNull(8) ?: ""
+    if (secPart.isNotEmpty() && !Regex("""^\d+(?:\.\d+)?$""").matches(secPart.removeSuffix("S"))) return false
 
     return true
 }

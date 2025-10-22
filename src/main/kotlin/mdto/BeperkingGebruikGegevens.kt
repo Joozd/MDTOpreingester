@@ -1,4 +1,8 @@
 package nl.joozd.mdtopreingester.mdto
 
-class BeperkingGebruikGegevens {
-}
+data class BeperkingGebruikGegevens(
+    val beperkingGebruikType: BegripGegevens,
+    val beperkingGebruikNadereBeschrijving: String,
+    val beperkingGebruikDocumentatie: VerwijzingGegevens,
+    val beperkingGebruikTermijn: TermijnGegevens
+)
