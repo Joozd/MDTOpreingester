@@ -1,11 +1,10 @@
 package nl.joozd.mdtopreingester.mdto
 
+/**
+ * MDTO 1.0.1
+ * Overkoepelend object
+ * Is een InformatieObjectType of een BestandType.
+ */
 data class MdtoType(
-    val informatieobject: InformatieObjectType? = null,
-    val bestand: BestandType? = null
-){
-    init{
-        require(informatieobject != null || bestand != null){ "Een MDTO record moet óf een informatieobject, óf een bestand bevatten, niet geen van beide"}
-        require(informatieobject == null || bestand == null){ "Een MDTO record moet óf een informatieobject, óf een bestand bevatten, niet allebei"}
-    }
-}
+    val mdtoObjectType: ObjectType
+)
